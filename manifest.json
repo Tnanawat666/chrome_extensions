@@ -1,0 +1,27 @@
+{
+    "name":"TSX Market Tools",
+    "description":"TSX Market Tools",
+    "version":"0.2.1",
+    "manifest_version":3,
+    "background":{
+        "service_worker":"background.js"
+    },
+    "action":{
+        "default_popup":"popup.html",
+        "default_icon":{
+            "16":"./img/icon.png",
+            "32":"./img/icon.png",
+            "48":"./img/icon.png",
+            "128":"./img/icon.png"
+        }
+    },
+    "icons":{
+        "16":"./img/icon.png",
+        "32":"./img/icon.png",
+        "48":"./img/icon.png",
+        "128":"./img/icon.png"
+    },
+    "options_page":"./options.html",
+    "permissions":["activeTab", "tabs", "storage", "scripting"],
+    "host_permissions":["https://astronize.com/*"]
+}
