@@ -1,18 +1,20 @@
-// Function to find item IDs
-function findItemsId() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const items = document.querySelectorAll("span.gHqUzg");
-      var itemIds = [];
-      items.forEach((item) => {
-        const [_, itemId] = item.innerHTML.split("#");
-        itemIds.push(itemId.trim());
-      });
-      // console.log(itemIds);
+const findItemIds = () =>
+  new Promise((resolve) => {
+    setTimeout(async () => {
+      const itemElements = document.querySelectorAll(".gHqUzg");
+      const itemIds = (
+        await Promise.all(
+          Array.from(itemElements).map((itemElement) =>
+            itemElement.textContent
+              .split("#")
+              .slice(1)
+              .map((id) => id.trim())
+          )
+        )
+      ).flat();
       resolve(itemIds);
-    }, 500);
+    }, 800);
   });
-}
 
 async function getData(itemId) {
   const BASE_URL = "http://localhost:1323/api/v1/products/";
@@ -21,13 +23,24 @@ async function getData(itemId) {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      console.error(
-        `Failed to fetch data: ${response.statusText} (${response.status})`
-      );
+      if (response.status === 404) {
+        const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
+        const updatedFavItems = favItems.filter((item) => item !== itemId);
+        localStorage.setItem("favItems", JSON.stringify(updatedFavItems));
+
+        // Fetch data again for the remaining item ids
+        const newItems = await Promise.all(
+          updatedFavItems.map(async (id) => await getData(id))
+        );
+        return newItems.data;
+      } else {
+        console.error(
+          `Failed to fetch data: ${response.statusText} (${response.status})`
+        );
+      }
     }
 
     const jsonData = await response.json();
-
     return jsonData.data;
   } catch (error) {
     console.error(`Error fetching data for itemId ${itemId}:`, error);
@@ -123,51 +136,343 @@ function createAttributes(extraStat, attributesData) {
   }
 }
 
-function createFavButton() {
-  const favButton = document.createElement("button");
-  const icon = document.createElement("img");
-  icon.src = "./img/unlike.png";
-  favButton.className = "ant-btn ant-btn-default fav-button";
-  favButton.style.cssText = `
-    position: absolute;
-    top: 0;
-    right: 0;
-    margin: 1rem;
-    border-radius: 50%;
-    font-size: 2.5rem; 
-    border: 1px solid #ddd; 
-    background-color: #fff; 
-    z-index:999;
-    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
-    transition: background-color 0.2s;`;
-  favButton.append(icon);
-  favButton.addEventListener("click", () => {
-    event.stopPropagation();
-    favButton.innerHTML = favButton.innerHTML === "♡" ? "	❤" : "♡";
-  });
-  return favButton;
+function createFavFilterButton() {
+  const parent = document.getElementsByClassName("flex flex-row gap-x-4")[1];
+  const myFav = document.createElement("button");
+  if (parent.childElementCount == 2) {
+    myFav.className =
+      "ant-btn css-1t70z6z ant-btn-default AstButton__ButtonWrapper-sc-6rri8f-0 llGVmB py-0 shadow-none";
+    myFav.innerHTML = "<span>รายการโปรด</span>";
+    parent.appendChild(myFav);
+  }
+  return myFav;
 }
 
-function favoriteItems(id) {}
+function createFavButton(id) {
+  const unlikeSrc = `https://github.com/Tnanawat666/chrome_extensions/blob/main/img/unlike.png?raw=true`;
+  const likedSrc = `https://github.com/Tnanawat666/chrome_extensions/blob/main/img/liked.png?raw=true`;
+  const preloadImages = () => {
+    const images = [unlikeSrc, likedSrc];
+    images.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  };
+  preloadImages();
+  try {
+    const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
+    const favButton = document.createElement("button");
+    const icon = document.createElement("img");
+    icon.style.cssText = `
+      width: 100%; height: 100%; object-fit: contain;
+    `;
+    icon.loading = "lazy";
+    icon.decoding = "async";
+    icon.src = favItems?.includes(id) ? likedSrc : unlikeSrc;
+    favButton.className = "ant-btn ant-btn-default fav-button";
+    favButton.style.cssText = `
+      position: absolute;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      top: 0;
+      right: 0;
+      margin: 1rem;
+      border-radius: 50%;
+      font-size: 2.5rem;
+      border: 1px solid #ddd;
+      background-color: #fff;
+      z-index: 1;
+      box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
+      transition: background-color 0.2s;
+    `;
+    favButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      icon.src = icon.src === unlikeSrc ? likedSrc : unlikeSrc;
+
+      //Add new item to localStorage
+      const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
+      if (!favItems.includes(id)) {
+        favItems.push(id);
+        localStorage.setItem("favItems", JSON.stringify(favItems));
+      } else {
+        favItems.splice(favItems.indexOf(id), 1);
+        localStorage.setItem("favItems", JSON.stringify(favItems));
+      }
+    });
+
+    // Add hover effect
+    favButton.addEventListener("mouseover", () => {
+      favButton.style.transform = "scale(1.2)";
+    });
+    favButton.addEventListener("mouseout", () => {
+      favButton.style.transform = "scale(1)";
+    });
+
+    favButton.append(icon);
+    return favButton;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
+function createFavModal() {
+  const modalContainer = document.createElement("div");
+  modalContainer.id = "fav-modal";
+  modalContainer.className = "modal";
+  modalContainer.style.cssText = `
+    display: none;
+    position: fixed;
+    z-index: 3;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    scrollbar-width: none;
+    background-color: rgba(0, 0, 0, 0.7);
+  `;
+
+  const modalContent = document.createElement("div");
+  modalContent.className = "modal-content";
+  modalContent.style.cssText = `
+    background-color: #fefefe;
+    position: relative;
+    z-index: 4;
+    padding: 5%;
+    top: 3%;
+    margin: auto;
+    border: 1px solid #888;
+    width: 80%;
+    border-radius: 15px;
+    overflow-y: auto;
+  `;
+
+  const closeButton = document.createElement("span");
+  closeButton.className = "close";
+  closeButton.innerHTML = "&times;";
+  closeButton.style.cssText = `
+    color: #aaaaaa;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 28px;
+    font-weight: bold;
+  `;
+
+  closeButton.addEventListener(
+    "click",
+    () => (modalContainer.style.display = "none")
+  );
+  closeButton.addEventListener("mouseover", () => {
+    closeButton.style.color = "red";
+    closeButton.style.cursor = "pointer";
+    closeButton.style.transform = "scale(1.3)";
+  });
+  closeButton.addEventListener("mouseout", () => {
+    closeButton.style.color = "#aaaaaa";
+    closeButton.style.transform = "scale(1.0)";
+  });
+  modalContent.appendChild(closeButton);
+  modalContent.appendChild(createModalCardsContainer());
+  modalContainer.appendChild(modalContent);
+
+  modalContainer.addEventListener("click", (event) => {
+    if (event.target === modalContainer) {
+      modalContainer.style.display = "none";
+    }
+  });
+
+  return modalContainer;
+}
+
+function createModalCardsContainer() {
+  const modalCardsContainer = document.createElement("div");
+  modalCardsContainer.className = "modal_cards_container";
+
+  modalCardsContainer.style.display = "grid";
+  modalCardsContainer.style.padding = "1%";
+  modalCardsContainer.style.height = "100%";
+  modalCardsContainer.style.gridTemplateColumns =
+    "repeat(auto-fit, minmax(225px, 1fr))";
+  modalCardsContainer.style.gridAutoRows = "1fr";
+  modalCardsContainer.style.gap = "4%";
+  return modalCardsContainer;
+}
+
+function createModalCard() {
+  const modalCard = document.createElement("div");
+  modalCard.className = "modal_card";
+  modalCard.style.position = "relative";
+  modalCard.style.padding = "2%";
+  modalCard.style.borderRadius = "15px";
+  modalCard.style.boxShadow =
+    "rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px";
+  modalCard.style.zIndex = "5";
+  modalCard.style.width = "100%";
+  modalCard.style.maxWidth = "350px";
+
+  const mediaQuery = window.matchMedia("(max-width: 768px)");
+  mediaQuery.addListener(() => {
+    if (mediaQuery.matches) {
+      modalCard.style.maxWidth = "250px";
+      modalCard.style.padding = "2%";
+    } else {
+      modalCard.style.maxWidth = "300px";
+      modalCard.style.padding = "3%";
+    }
+  });
+
+  return modalCard;
+}
+
+async function toggleModal() {
+  const favModal = document.getElementById("fav-modal");
+  const modalCardsContainer = document.getElementsByClassName(
+    "modal_cards_container"
+  )[0];
+  favModal.style.display = favModal.style.display === "none" ? "flex" : "none";
+  if (favModal.style.display === "flex") {
+    const itemIds = JSON.parse(localStorage.getItem("favItems") || "[]");
+    const myFavItems = await Promise.all(
+      itemIds.map(async (id) => await getData(id))
+    );
+
+    modalCardsContainer.innerHTML = ""; // Clear the existing cards
+
+    myFavItems.forEach((item) => {
+      const card = createModalCard();
+      const stat = createStatsDiv();
+      const favButton = createFavButton(item.token_id);
+      const mainAttributeName = document.createElement("span");
+      mainAttributeName.style.cssText = `text-decoration: underline;
+        color: red;
+        font-weight: 800;
+        font-style: italic;`;
+
+      const subAttributeName = document.createElement("span");
+      subAttributeName.style.cssText = `text-decoration: underline;
+        color: skyblue;
+        font-weight: 600;
+        font-style: italic;`;
+
+      const hr = document.createElement("hr");
+      hr.style.cssText = `
+            width: 100%;
+          `;
+
+      card.onmouseover = () => {
+        card.style.cursor = "pointer";
+        card.style.border = "4px solid skyblue";
+        card.style.transition = "border 0.3s ease-in-out";
+        card.style.transform = "scale(1.1)";
+      };
+
+      card.onmouseout = () => {
+        card.style.border = "none";
+        card.style.transform = "scale(1.0)";
+      };
+
+      const cardImageContainer = createCardImageContainer(item.image);
+      const cardLabel = createCardLabel(
+        `${item.name} #${item.token_id}`,
+        item.tsx_price
+      );
+      card.appendChild(cardImageContainer);
+      card.appendChild(cardLabel);
+
+      createDisplayDataStats(item.params_th_json.attributes, stat);
+      const extraStat = createExtraStat(
+        item.params_th_json.extra.attributes,
+        stat
+      );
+      if (
+        item.params_th_json.main_attributes.attributes &&
+        item.params_th_json.sub_attributes.attributes
+      ) {
+        mainAttributeName.innerHTML =
+          item.params_th_json.main_attributes.name_attributes;
+        subAttributeName.innerHTML =
+          item.params_th_json.sub_attributes.name_attributes;
+        extraStat.appendChild(mainAttributeName);
+        createAttributes(
+          extraStat,
+          item.params_th_json.main_attributes.attributes
+        );
+        extraStat.appendChild(hr);
+        extraStat.appendChild(subAttributeName);
+        createAttributes(
+          extraStat,
+          item.params_th_json.sub_attributes.attributes
+        );
+        stat.appendChild(extraStat);
+      }
+      card.appendChild(favButton);
+      card.appendChild(stat);
+      modalCardsContainer.appendChild(card);
+    });
+  } else {
+  }
+}
+
+function createCardLabel(label, tsx_price) {
+  const div = document.createElement("div");
+  div.className = "flex flex-col";
+  const divLayout = document.createElement("div");
+  divLayout.className = "flex flex-row items-start justify-between";
+  const divLabel = document.createElement("div");
+  divLabel.className = "AstText__TextWrapper-sc-1ydzoup-0 gHqUzg";
+  divLabel.innerHTML = `<span type="normal_700_14px_20px" color="#414141">${label}</span>`;
+  const divPriceContainer = document.createElement("div");
+  divPriceContainer.className =
+    "mt-[1px] flex flex-[0_0_auto] flex-row items-center justify-center gap-1";
+  const divPrice = document.createElement("div");
+  divPrice.innerHTML = `<span type="normal_700_12px_16px" color="#02D767" class="AstText__TextWrapper-sc-1ydzoup-0 bkGuAK">${tsx_price}TSX</span>`;
+  divLayout.appendChild(divLabel);
+  divLayout.appendChild(divPrice);
+  div.appendChild(divLayout);
+  return div;
+}
+
+function createCardImageContainer(imageSrc) {
+  const cardImageContainer = document.createElement("div");
+  cardImageContainer.className =
+    "relative flex h-[196px] justify-center overflow-hidden rounded-[10px] border border-solid border-ast-grey200 bg-ast-grey200";
+  const cardImage = document.createElement("img");
+  cardImage.src = `${imageSrc}`;
+  cardImage.loading = "lazy";
+  cardImage.decoding = "async";
+  cardImage.sizes = "5vw";
+  cardImage.style.cssText = `width: 100%; height: 100%; 
+  pointer-events: none;
+  object-fit: contain; 
+  user-drag: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;`;
+  cardImageContainer.appendChild(cardImage);
+  return cardImageContainer;
+}
 
 async function createStats() {
-  const head = document.getElementsByTagName("head")[0];
-  head.innerHTML =
-    head.innerHTML +
-    '<script src="https://kit.fontawesome.com/cd0cc79b2a.js" crossorigin="anonymous"></script>';
-  const itemIds = await findItemsId();
+  const itemIds = await findItemIds();
   const allData = await Promise.all(itemIds.map((id) => getData(id)));
   const parents = document.querySelectorAll(
     ".group.flex.w-full.flex-col.gap-2"
   );
   for (let index = 0; index < parents.length; index++) {
-    const favButton = createFavButton();
     const parent = parents[index];
     parent.style.position = "relative";
     if (parent.childElementCount === 2) {
       const stat = createStatsDiv();
 
       if (allData[index]) {
+        const favButton = createFavButton(allData[index].token_id);
         const dataStats = allData[index].params_th_json.attributes;
         createDisplayDataStats(dataStats, stat);
 
@@ -209,16 +514,20 @@ async function createStats() {
           createAttributes(extraStat, sub_attributes);
           stat.appendChild(extraStat);
         }
+        parent.appendChild(favButton);
       }
 
-      parent.appendChild(favButton);
       parent.appendChild(stat);
     }
   }
 }
 
 setTimeout(() => {
+  document.body.append(createFavModal());
+  const favFilterButton = createFavFilterButton();
+  favFilterButton.addEventListener("click", toggleModal);
+
   createStats();
   const button = document.getElementsByClassName("css-9i6sf3").item(0);
   button.addEventListener("click", createStats);
-}, 1000);
+}, 1500);
