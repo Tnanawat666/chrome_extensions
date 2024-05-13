@@ -54,6 +54,7 @@ function createStatsDiv() {
         background-color: blue;
         color: white;
         padding: 10px;
+        margin:2%;
         text-align: center;
         box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
         border-radius: 10px;
@@ -345,6 +346,10 @@ async function toggleModal() {
 
     myFavItems.forEach((item) => {
       const card = createModalCard();
+      card.onclick = () => {
+        const url = `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${item.token_id}`;
+        window.open(url);
+      };
       const stat = createStatsDiv();
       const favButton = createFavButton(item.token_id);
       const mainAttributeName = document.createElement("span");
@@ -420,6 +425,7 @@ async function toggleModal() {
 
 function createCardLabel(label, tsx_price) {
   const div = document.createElement("div");
+  div.style.margin = "2%";
   div.className = "flex flex-col";
   const divLayout = document.createElement("div");
   divLayout.className = "flex flex-row items-start justify-between";
@@ -439,6 +445,8 @@ function createCardLabel(label, tsx_price) {
 
 function createCardImageContainer(imageSrc) {
   const cardImageContainer = document.createElement("div");
+  cardImageContainer.style.margin = "2%";
+  cardImageContainer.style.backgroundColor = "rgba(0, 0, 0, 0)";
   cardImageContainer.className =
     "relative flex h-[196px] justify-center overflow-hidden rounded-[10px] border border-solid border-ast-grey200 bg-ast-grey200";
   const cardImage = document.createElement("img");
@@ -524,6 +532,7 @@ async function createStats() {
 
 setTimeout(() => {
   document.body.append(createFavModal());
+  localStorage.getItem("favItems");
   const favFilterButton = createFavFilterButton();
   favFilterButton.addEventListener("click", toggleModal);
 
