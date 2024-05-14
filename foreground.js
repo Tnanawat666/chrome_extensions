@@ -429,18 +429,6 @@ if (!window.hasRun) {
 
   setTimeout(delayedInitialization, 1000);
 
-  function observeDOMChanges() {
-    const observer = new MutationObserver(() => {
-      createStats();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-
-  setTimeout(() => {
-    initializeScript();
-    observeDOMChanges();
-  }, 1000);
-
   const styles = `
   .stat {
     background-color: blue;
