@@ -158,21 +158,17 @@ function createFavButton(id) {
   };
 
   // Preload images
-  Object.values(imageSources).forEach((src) => {
-    const img = new Image();
-    img.src = src;
-  });
+  for (const src of Object.values(imageSources)) {
+    new Image().src = src;
+  }
 
-  const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
   const favButton = document.createElement("button");
   favButton.className = "ant-btn ant-btn-default fav-button";
 
   const icon = document.createElement("img");
   icon.className = "fav-icon";
-  icon.style.cssText = `
-      width: 100%; height: 100%; object-fit: contain;
-    `;
-  icon.src = favItems.includes(id) ? imageSources.liked : imageSources.unlike;
+  icon.style.cssText = "width: 100%; height: 100%; object-fit: contain;";
+  favButton.appendChild(icon);
 
   const buttonStyles = {
     position: "absolute",
@@ -195,41 +191,43 @@ function createFavButton(id) {
   };
   Object.assign(favButton.style, buttonStyles);
 
-  favButton.className = "ant-btn ant-btn-default fav-button";
+  const updateIcon = () => {
+    const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
+    icon.src = favItems.includes(id) ? imageSources.liked : imageSources.unlike;
+  };
 
   const toggleFav = (event) => {
     event.stopPropagation();
-    icon.src =
-      icon.src === imageSources.unlike
-        ? imageSources.liked
-        : imageSources.unlike;
-    updateFavItems(id);
-  };
-
-  const updateFavItems = (id) => {
     const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
-    if (!favItems.includes(id)) {
-      favItems.push(id);
-      localStorage.setItem("favItems", JSON.stringify(favItems));
-    } else {
+    if (favItems.includes(id)) {
       favItems.splice(favItems.indexOf(id), 1);
-      localStorage.setItem("favItems", JSON.stringify(favItems));
+    } else {
+      favItems.push(id);
     }
+    localStorage.setItem("favItems", JSON.stringify(favItems));
+    updateIcon();
+
+    const favToggleEvent = new CustomEvent("favToggle", { detail: { id } });
+    window.dispatchEvent(favToggleEvent);
   };
 
   favButton.addEventListener("click", toggleFav);
 
-  // Add hover effect
-  const handleMouseOver = () => {
+  favButton.addEventListener("mouseover", () => {
     favButton.style.transform = "scale(1.2)";
-  };
-  const handleMouseOut = () => {
-    favButton.style.transform = "scale(1)";
-  };
-  favButton.addEventListener("mouseover", handleMouseOver);
-  favButton.addEventListener("mouseout", handleMouseOut);
+  });
 
-  favButton.append(icon);
+  favButton.addEventListener("mouseout", () => {
+    favButton.style.transform = "scale(1)";
+  });
+
+  window.addEventListener("favToggle", (event) => {
+    if (event.detail.id === id) {
+      updateIcon();
+    }
+  });
+
+  updateIcon();
   return favButton;
 }
 
