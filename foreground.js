@@ -150,75 +150,87 @@ function createFavFilterButton() {
 }
 
 function createFavButton(id) {
-  const unlikeSrc = `https://github.com/Tnanawat666/chrome_extensions/blob/main/img/unlike.png?raw=true`;
-  const likedSrc = `https://github.com/Tnanawat666/chrome_extensions/blob/main/img/liked.png?raw=true`;
-  const preloadImages = () => {
-    const images = [unlikeSrc, likedSrc];
-    images.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
+  const imageSources = {
+    unlike:
+      "https://github.com/Tnanawat666/chrome_extensions/blob/main/img/unlike.png?raw=true",
+    liked:
+      "https://github.com/Tnanawat666/chrome_extensions/blob/main/img/liked.png?raw=true",
   };
-  preloadImages();
-  try {
-    const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
-    const favButton = document.createElement("button");
-    const icon = document.createElement("img");
-    icon.className = "fav-icon";
-    icon.style.cssText = `
+
+  // Preload images
+  Object.values(imageSources).forEach((src) => {
+    const img = new Image();
+    img.src = src;
+  });
+
+  const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
+  const favButton = document.createElement("button");
+  favButton.className = "ant-btn ant-btn-default fav-button";
+
+  const icon = document.createElement("img");
+  icon.className = "fav-icon";
+  icon.style.cssText = `
       width: 100%; height: 100%; object-fit: contain;
     `;
-    icon.loading = "lazy";
-    icon.decoding = "async";
-    icon.src = favItems?.includes(id) ? likedSrc : unlikeSrc;
-    favButton.className = "ant-btn ant-btn-default fav-button";
-    favButton.style.cssText = `
-      position: absolute;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 40px;
-      height: 40px;
-      top: 0;
-      right: 0;
-      margin: 1rem;
-      border-radius: 50%;
-      font-size: 2.5rem;
-      border: 1px solid #ddd;
-      background-color: #fff;
-      z-index: 1;
-      box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
-      transition: background-color 0.2s;
-    `;
-    favButton.addEventListener("click", (event) => {
-      event.stopPropagation();
-      icon.src = icon.src === unlikeSrc ? likedSrc : unlikeSrc;
+  icon.src = favItems.includes(id) ? imageSources.liked : imageSources.unlike;
 
-      //Add new item to localStorage
-      const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
-      if (!favItems.includes(id)) {
-        favItems.push(id);
-        localStorage.setItem("favItems", JSON.stringify(favItems));
-      } else {
-        favItems.splice(favItems.indexOf(id), 1);
-        localStorage.setItem("favItems", JSON.stringify(favItems));
-      }
-    });
+  const buttonStyles = {
+    position: "absolute",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: "40px",
+    height: "40px",
+    top: "0",
+    right: "0",
+    margin: "1rem",
+    borderRadius: "50%",
+    fontSize: "2.5rem",
+    border: "1px solid #ddd",
+    backgroundColor: "#fff",
+    zIndex: 1,
+    boxShadow:
+      "rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px",
+    transition: "background-color 0.2s",
+  };
+  Object.assign(favButton.style, buttonStyles);
 
-    // Add hover effect
-    favButton.addEventListener("mouseover", () => {
-      favButton.style.transform = "scale(1.2)";
-    });
-    favButton.addEventListener("mouseout", () => {
-      favButton.style.transform = "scale(1)";
-    });
+  favButton.className = "ant-btn ant-btn-default fav-button";
 
-    favButton.append(icon);
-    return favButton;
-  } catch (error) {
-    console.error(error);
-    return null;
-  }
+  const toggleFav = (event) => {
+    event.stopPropagation();
+    icon.src =
+      icon.src === imageSources.unlike
+        ? imageSources.liked
+        : imageSources.unlike;
+    updateFavItems(id);
+  };
+
+  const updateFavItems = (id) => {
+    const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
+    if (!favItems.includes(id)) {
+      favItems.push(id);
+      localStorage.setItem("favItems", JSON.stringify(favItems));
+    } else {
+      favItems.splice(favItems.indexOf(id), 1);
+      localStorage.setItem("favItems", JSON.stringify(favItems));
+    }
+  };
+
+  favButton.addEventListener("click", toggleFav);
+
+  // Add hover effect
+  const handleMouseOver = () => {
+    favButton.style.transform = "scale(1.2)";
+  };
+  const handleMouseOut = () => {
+    favButton.style.transform = "scale(1)";
+  };
+  favButton.addEventListener("mouseover", handleMouseOver);
+  favButton.addEventListener("mouseout", handleMouseOut);
+
+  favButton.append(icon);
+  return favButton;
 }
 
 function createFavModal() {
@@ -265,17 +277,10 @@ function createFavModal() {
     font-weight: bold;
   `;
 
-  closeButton.addEventListener("click", () => {
-    modalContainer.style.display = "none";
-    if (modalContainer.style.display === "none") {
-      const modalCardsContainer = document.getElementsByClassName(
-        "modal_cards_container"
-      )[0];
-      modalCardsContainer.innerHTML = "";
-
-      // Update the fav-icon source in the modal to match the fav-icon in the close button
-    }
-  });
+  closeButton.addEventListener(
+    "click",
+    () => (modalContainer.style.display = "none")
+  );
   closeButton.addEventListener("mouseover", () => {
     closeButton.style.color = "red";
     closeButton.style.cursor = "pointer";
@@ -343,6 +348,7 @@ async function toggleModal() {
   const modalCardsContainer = document.getElementsByClassName(
     "modal_cards_container"
   )[0];
+  modalCardsContainer.innerHTML = "";
   favModal.style.display = favModal.style.display === "none" ? "flex" : "none";
   if (favModal.style.display === "flex") {
     const itemIds = JSON.parse(localStorage.getItem("favItems") || "[]");
