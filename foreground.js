@@ -164,6 +164,7 @@ function createFavButton(id) {
     const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
     const favButton = document.createElement("button");
     const icon = document.createElement("img");
+    icon.className = "fav-icon";
     icon.style.cssText = `
       width: 100%; height: 100%; object-fit: contain;
     `;
@@ -264,10 +265,17 @@ function createFavModal() {
     font-weight: bold;
   `;
 
-  closeButton.addEventListener(
-    "click",
-    () => (modalContainer.style.display = "none")
-  );
+  closeButton.addEventListener("click", () => {
+    modalContainer.style.display = "none";
+    if (modalContainer.style.display === "none") {
+      const modalCardsContainer = document.getElementsByClassName(
+        "modal_cards_container"
+      )[0];
+      modalCardsContainer.innerHTML = "";
+
+      // Update the fav-icon source in the modal to match the fav-icon in the close button
+    }
+  });
   closeButton.addEventListener("mouseover", () => {
     closeButton.style.color = "red";
     closeButton.style.cursor = "pointer";
@@ -341,8 +349,6 @@ async function toggleModal() {
     const myFavItems = await Promise.all(
       itemIds.map(async (id) => await getData(id))
     );
-
-    modalCardsContainer.innerHTML = ""; // Clear the existing cards
 
     myFavItems.forEach((item) => {
       const card = createModalCard();
