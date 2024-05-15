@@ -46,7 +46,28 @@ if (!window.hasRun) {
     return jsonData.data;
   }
 
+  function showAlert(message) {
+    const alertContainer = document.getElementById("alertContainer");
+    const alertDiv = document.createElement("div");
+    alertDiv.classList.add("alert");
+    alertDiv.textContent = message;
+
+    alertContainer.appendChild(alertDiv);
+
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 5000);
+  }
+
+  let favTimes = -1;
+  let fetchedIds = new Set();
   async function getData(itemId) {
+    //Handle repeated API calls
+    if (fetchedIds.has(itemId)) {
+      console.log("skip item", itemId);
+      return null;
+    }
+
     const BASE_URL =
       "https://prod-mkp-api.astronize.com/mkp/item/nft/0x7d4622363695473062cc0068686d81964bb6e09f/";
     const url = `${BASE_URL}${itemId}`;
@@ -55,10 +76,37 @@ if (!window.hasRun) {
       const response = await fetch(url);
 
       if (!response.ok) {
+        console.error(
+          `Failed to fetch data for itemId ${itemId}: ${response.statusText} (${response.status})`
+        );
+        return null;
+      }
+
+      const jsonData = await response.json();
+      const transformedData = transformRes(jsonData);
+
+      fetchedIds.add(itemId);
+
+      return transformedData;
+    } catch (error) {
+      console.error(`Error fetching data for itemId ${itemId}:`, error);
+      return null;
+    }
+  }
+  async function getFavData(itemId) {
+    const BASE_URL =
+      "https://prod-mkp-api.astronize.com/mkp/item/nft/0x7d4622363695473062cc0068686d81964bb6e09f/";
+    const url = `${BASE_URL}${itemId}`;
+
+    try {
+      const response = await fetch(url);
+      favTimes++;
+      console.log("API Fav", favTimes);
+
+      if (!response.ok) {
         if (response.status === 404) {
           console.warn(`Item ID ${itemId} not found. Removing from favorites.`);
-          //display alert notification 5 seconds before removing to user that item is sold out
-
+          showAlert(`The item with ID ${itemId} has been sold out.`);
           const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
           const updatedFavItems = favItems.filter((item) => item !== itemId);
           localStorage.setItem("favItems", JSON.stringify(updatedFavItems));
@@ -70,16 +118,18 @@ if (!window.hasRun) {
           return newItems.filter((data) => data !== null);
         } else {
           console.error(
-            `Failed to fetch data for itemId ${itemId}: ${response.statusText} (${response.status})`
+            `Failed to fetch fav data for itemId ${itemId}: ${response.statusText} (${response.status})`
           );
+          return null;
         }
       }
 
       const jsonData = await response.json();
       const transformedData = transformRes(jsonData);
+
       return transformedData;
     } catch (error) {
-      console.error(`Error fetching data for itemId ${itemId}:`, error);
+      console.error(`Error fetching fav data for itemId ${itemId}:`, error);
       return null;
     }
   }
@@ -261,79 +311,80 @@ if (!window.hasRun) {
     const modalCardsContainer = document.getElementsByClassName(
       "modal_cards_container"
     )[0];
-    modalCardsContainer.innerHTML = "";
     favModal.style.display =
       favModal.style.display === "none" ? "flex" : "none";
+
     if (favModal.style.display === "flex") {
       document.documentElement.style.overflow = "hidden";
       document.body.scroll = "no";
+
       const itemIds = JSON.parse(localStorage.getItem("favItems") || "[]");
       const myFavItems = await Promise.all(
-        itemIds.map(async (id) => await getData(id))
+        itemIds.map(async (id) => await getFavData(id))
       );
 
       myFavItems.forEach((item) => {
-        const card = createModalCard();
-        card.onclick = () => {
-          const url = `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${item.token_id}`;
-          window.open(url);
-        };
-        const stat = createStatsDiv();
-        const favButton = createFavButton(item.token_id);
-        const mainAttributeName = document.createElement("span");
-        mainAttributeName.style.cssText = `text-decoration: underline;
-        color: red;
-        font-weight: 800;
-        font-style: italic;`;
+        // Check if the card for the item already exists
+        if (!document.getElementById(`card-${item.token_id}`)) {
+          const card = createModalCard();
+          card.id = `card-${item.token_id}`; // Set a unique ID for each card
 
-        const subAttributeName = document.createElement("span");
-        subAttributeName.style.cssText = `text-decoration: underline;
-        color: skyblue;
-        font-weight: 600;
-        font-style: italic;`;
+          card.onclick = () => {
+            const url = `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${item.token_id}`;
+            window.open(url);
+          };
 
-        const hr = document.createElement("hr");
-        hr.style.cssText = `
-            width: 100%;
-          `;
+          const stat = createStatsDiv();
+          const favButton = createFavButton(item.token_id);
+          const mainAttributeName = document.createElement("span");
+          mainAttributeName.style.cssText = `text-decoration: underline; color: red; font-weight: 800; font-style: italic;`;
 
-        const cardImageContainer = createCardImageContainer(item.image);
-        const cardLabel = createCardLabel(
-          `${item.name} #${item.token_id}`,
-          item.tsx_price
-        );
-        card.appendChild(cardImageContainer);
-        card.appendChild(cardLabel);
+          const subAttributeName = document.createElement("span");
+          subAttributeName.style.cssText = `text-decoration: underline; color: skyblue; font-weight: 600; font-style: italic;`;
 
-        createDisplayDataStats(item.params_th_json.attributes, stat);
-        const extraStat = createExtraStat(
-          item.params_th_json.extra.attributes,
-          stat
-        );
-        if (
-          item.params_th_json.main_attributes.attributes &&
-          item.params_th_json.sub_attributes.attributes
-        ) {
-          mainAttributeName.innerHTML =
-            item.params_th_json.main_attributes.name_attributes;
-          subAttributeName.innerHTML =
-            item.params_th_json.sub_attributes.name_attributes;
-          extraStat.appendChild(mainAttributeName);
-          createAttributes(
-            extraStat,
-            item.params_th_json.main_attributes.attributes
+          const hr = document.createElement("hr");
+          hr.style.cssText = `width: 100%;`;
+
+          const cardImageContainer = createCardImageContainer(item.image);
+          const cardLabel = createCardLabel(
+            `${item.name} #${item.token_id}`,
+            item.tsx_price
           );
-          extraStat.appendChild(hr);
-          extraStat.appendChild(subAttributeName);
-          createAttributes(
-            extraStat,
+          card.appendChild(cardImageContainer);
+          card.appendChild(cardLabel);
+
+          createDisplayDataStats(item.params_th_json.attributes, stat);
+          const extraStat = createExtraStat(
+            item.params_th_json.extra.attributes,
+            stat
+          );
+
+          if (
+            item.params_th_json.main_attributes.attributes &&
             item.params_th_json.sub_attributes.attributes
-          );
-          stat.appendChild(extraStat);
+          ) {
+            mainAttributeName.innerHTML =
+              item.params_th_json.main_attributes.name_attributes;
+            subAttributeName.innerHTML =
+              item.params_th_json.sub_attributes.name_attributes;
+            extraStat.appendChild(mainAttributeName);
+            createAttributes(
+              extraStat,
+              item.params_th_json.main_attributes.attributes
+            );
+            extraStat.appendChild(hr);
+            extraStat.appendChild(subAttributeName);
+            createAttributes(
+              extraStat,
+              item.params_th_json.sub_attributes.attributes
+            );
+            stat.appendChild(extraStat);
+          }
+
+          card.appendChild(favButton);
+          card.appendChild(stat);
+          modalCardsContainer.appendChild(card);
         }
-        card.appendChild(favButton);
-        card.appendChild(stat);
-        modalCardsContainer.appendChild(card);
       });
     } else {
       document.documentElement.style.overflow = "scroll";
@@ -372,24 +423,26 @@ if (!window.hasRun) {
     return cardImageContainer;
   }
 
-  let tmpNumIndex = 0;
-
   async function createStats() {
     const itemIds = await findItemIds();
     const allData = await Promise.all(itemIds.map((id) => getData(id)));
     const parents = document.querySelectorAll(
       ".group.flex.w-full.flex-col.gap-2"
     );
-    for (let index = tmpNumIndex; index < parents.length; index++) {
-      tmpNumIndex = index + 1;
+
+    for (let index = 0; index < parents.length; index++) {
       const parent = parents[index];
-      parent.style.position = "relative";
-      parent.addEventListener("click", () => {
-        event.stopPropagation();
-        window.open(
-          `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${itemIds[index]}`
-        );
-      });
+      if (!parent.hasListener) {
+        parent.style.position = "relative";
+        parent.addEventListener("click", (event) => {
+          event.stopPropagation();
+          window.open(
+            `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${itemIds[index]}`
+          );
+        });
+        parent.hasListener = true;
+      }
+
       if (parent.childElementCount === 2) {
         const stat = createStatsDiv();
 
@@ -400,20 +453,19 @@ if (!window.hasRun) {
 
           const extraAttributes =
             allData[index].params_th_json.extra.attributes;
-
           const extraStat = createExtraStat(extraAttributes, stat);
 
           const mainAttributeName = document.createElement("span");
           mainAttributeName.style.cssText = `text-decoration: underline;
-        color: red;
-        font-weight: 800;
-        font-style: italic;`;
+                color: red;
+                font-weight: 800;
+                font-style: italic;`;
 
           const subAttributeName = document.createElement("span");
           subAttributeName.style.cssText = `text-decoration: underline;
-        color: skyblue;
-        font-weight: 600;
-        font-style: italic;`;
+                color: skyblue;
+                font-weight: 600;
+                font-style: italic;`;
 
           const main_attributes =
             allData[index].params_th_json.main_attributes.attributes;
@@ -423,13 +475,13 @@ if (!window.hasRun) {
             allData[index].params_th_json.sub_attributes.attributes;
           const sub_name =
             allData[index].params_th_json.sub_attributes.name_attributes;
+
           if (main_attributes && sub_attributes) {
             mainAttributeName.innerHTML = main_name;
             subAttributeName.innerHTML = sub_name;
             const hr = document.createElement("hr");
-            hr.style.cssText = `
-            width: 100%;
-          `;
+            hr.style.cssText = `width: 100%;`;
+
             extraStat.appendChild(mainAttributeName);
             createAttributes(extraStat, main_attributes);
             extraStat.appendChild(hr);
@@ -437,6 +489,7 @@ if (!window.hasRun) {
             createAttributes(extraStat, sub_attributes);
             stat.appendChild(extraStat);
           }
+
           parent.appendChild(favButton);
         }
 
@@ -455,37 +508,43 @@ if (!window.hasRun) {
   }
 
   // init script and event listeners for url change
-  (function () {
-    let lastUrl = location.href;
+  const initializeScript = () => {
+    const currentPage = location.href;
+    localStorage.setItem("URL", currentPage);
+    document.body.append(createFavModal());
 
-    const initializeScript = () => {
-      document.body.append(createFavModal());
-      const favFilterButton = createFavFilterButton();
-      favFilterButton.addEventListener("click", toggleModal);
-      createStats();
+    const messageAlert = document.createElement("div");
+    messageAlert.id = "alertContainer";
+    document.body.append(messageAlert);
 
-      window.addEventListener("scroll", handleScroll);
+    const favFilterButton = createFavFilterButton();
+    favFilterButton.addEventListener("click", toggleModal);
+    createStats();
 
-      const button = document.getElementsByClassName("css-9i6sf3").item(0);
-      if (button && !button.hasListener) {
-        button.addEventListener("click", createStats);
-        button.hasListener = true;
-      }
-    };
+    window.addEventListener("scroll", handleScroll);
 
-    const onUrlChange = () => {
-      // console.log("URL changed");
-      if (location.href !== lastUrl) {
-        lastUrl = location.href;
-        setTimeout(initializeScript, 1000);
-      }
-    };
+    const button = document.getElementsByClassName("css-9i6sf3").item(0);
+    if (button && !button.hasListener) {
+      button.addEventListener("click", createStats);
+      button.hasListener = true;
+    }
+    console.log(fetchedIds);
+  };
 
-    const observer = new MutationObserver(onUrlChange);
-    observer.observe(document, { subtree: true, childList: true });
+  const checkUrlChange = () => {
+    const currentPage = location.href;
+    const previousPage = localStorage.getItem("URL");
+    if (currentPage !== previousPage) {
+      localStorage.setItem("URL", currentPage);
+      //refresh the page or init script;
+      window.location.reload();
+    }
+  };
 
-    window.onload = initializeScript();
-  })();
+  const observer = new MutationObserver(checkUrlChange);
+  observer.observe(document, { subtree: true, childList: true });
+
+  window.onload = initializeScript();
 
   const styles = `
   .stat {
@@ -576,7 +635,7 @@ if (!window.hasRun) {
 
   .modal_cards_container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     grid-gap: 3%;
     align-items: space-around;
     height: 100%;
@@ -621,6 +680,35 @@ if (!window.hasRun) {
     right:50px;
     z-index: 2;
   }
+
+#alertContainer {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.alert {
+  margin-top: 10px;
+  width: 250px;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.5s forwards;
+}
+
+@keyframes slideIn {
+  from {
+    left: -300px;
+    opacity: 0;
+  }
+  to {
+    left: 20px;
+    opacity: 1;
+  }
+}
 `;
 
   const styleSheet = document.createElement("style");
