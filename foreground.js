@@ -29,6 +29,8 @@ if (!window.hasRun) {
       if (!response.ok) {
         if (response.status === 404) {
           console.warn(`Item ID ${itemId} not found. Removing from favorites.`);
+          //display alert notification 5 seconds before removing to user that item is sold out
+
           const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
           const updatedFavItems = favItems.filter((item) => item !== itemId);
           localStorage.setItem("favItems", JSON.stringify(updatedFavItems));
@@ -433,7 +435,11 @@ if (!window.hasRun) {
     initializeScript();
   };
 
-  setTimeout(delayedInitialization, 1000);
+  window.addEventListener("popstate", () => {
+    setTimeout(delayedInitialization, 1000);
+  });
+
+  setTimeout(delayedInitialization, 500);
 
   const styles = `
   .stat {
