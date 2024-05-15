@@ -343,15 +343,25 @@ if (!window.hasRun) {
     return cardImageContainer;
   }
 
+  let tmpNumIndex = 0;
+
   async function createStats() {
     const itemIds = await findItemIds();
     const allData = await Promise.all(itemIds.map((id) => getData(id)));
     const parents = document.querySelectorAll(
       ".group.flex.w-full.flex-col.gap-2"
     );
-    for (let index = 0; index < parents.length; index++) {
+    for (let index = tmpNumIndex; index < parents.length; index++) {
+      tmpNumIndex = index + 1;
+      console.log(index);
       const parent = parents[index];
       parent.style.position = "relative";
+      parent.addEventListener("click", () => {
+        event.stopPropagation();
+        window.open(
+          `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${itemIds[index]}`
+        );
+      });
       if (parent.childElementCount === 2) {
         const stat = createStatsDiv();
 
@@ -416,30 +426,38 @@ if (!window.hasRun) {
     }
   }
 
-  const initializeScript = () => {
-    document.body.append(createFavModal());
-    const favFilterButton = createFavFilterButton();
-    favFilterButton.addEventListener("click", toggleModal);
-    createStats();
+  // init script and event listeners for url change
+  (function () {
+    let lastUrl = location.href;
 
-    window.addEventListener("scroll", handleScroll);
+    const initializeScript = () => {
+      document.body.append(createFavModal());
+      const favFilterButton = createFavFilterButton();
+      favFilterButton.addEventListener("click", toggleModal);
+      createStats();
 
-    const button = document.getElementsByClassName("css-9i6sf3").item(0);
-    if (button && !button.hasListener) {
-      button.addEventListener("click", createStats);
-      button.hasListener = true;
-    }
-  };
+      window.addEventListener("scroll", handleScroll);
 
-  const delayedInitialization = () => {
-    initializeScript();
-  };
+      const button = document.getElementsByClassName("css-9i6sf3").item(0);
+      if (button && !button.hasListener) {
+        button.addEventListener("click", createStats);
+        button.hasListener = true;
+      }
+    };
 
-  window.addEventListener("popstate", () => {
-    setTimeout(delayedInitialization, 1000);
-  });
+    const onUrlChange = () => {
+      // console.log("URL changed");
+      if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        setTimeout(initializeScript, 1000);
+      }
+    };
 
-  setTimeout(delayedInitialization, 500);
+    const observer = new MutationObserver(onUrlChange);
+    observer.observe(document, { subtree: true, childList: true });
+
+    window.onload = initializeScript();
+  })();
 
   const styles = `
   .stat {
@@ -530,7 +548,7 @@ if (!window.hasRun) {
 
   .modal_cards_container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     grid-gap: 3%;
     align-items: space-around;
     height: 100%;
