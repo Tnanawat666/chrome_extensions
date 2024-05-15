@@ -16,7 +16,7 @@ if (!window.hasRun) {
           )
         ).flat();
         resolve(itemIds);
-      }, 1500);
+      }, 1200);
     });
 
   async function getData(itemId) {
@@ -121,7 +121,7 @@ if (!window.hasRun) {
     const myFav = document.createElement("button");
     if (parent.childElementCount == 2) {
       myFav.className =
-        "ant-btn css-1t70z6z ant-btn-default AstButton__ButtonWrapper-sc-6rri8f-0 llGVmB py-0 shadow-none";
+        "ant-btn css-1t70z6z ant-btn-default AstButton__ButtonWrapper-sc-6rri8f-0 llGVmB favFilter-button ";
       myFav.innerHTML = "<span>รายการโปรด</span>";
       parent.appendChild(myFav);
     }
@@ -234,6 +234,8 @@ if (!window.hasRun) {
     favModal.style.display =
       favModal.style.display === "none" ? "flex" : "none";
     if (favModal.style.display === "flex") {
+      document.documentElement.style.overflow = "hidden";
+      document.body.scroll = "no";
       const itemIds = JSON.parse(localStorage.getItem("favItems") || "[]");
       const myFavItems = await Promise.all(
         itemIds.map(async (id) => await getData(id))
@@ -303,6 +305,8 @@ if (!window.hasRun) {
         modalCardsContainer.appendChild(card);
       });
     } else {
+      document.documentElement.style.overflow = "scroll";
+      document.body.scroll = "yes";
     }
   }
 
@@ -400,31 +404,33 @@ if (!window.hasRun) {
       }
     }
   }
+
+  function handleScroll() {
+    const favButton = document.querySelector(".favFilter-button");
+    if (window.scrollY > 500) {
+      favButton.classList.add("fixed-top-right");
+    } else {
+      favButton.classList.remove("fixed-top-right");
+    }
+  }
+
   const initializeScript = () => {
     document.body.append(createFavModal());
     const favFilterButton = createFavFilterButton();
     favFilterButton.addEventListener("click", toggleModal);
-
     createStats();
 
-    // Ensure the button is not null and add a single event listener
+    window.addEventListener("scroll", handleScroll);
+
     const button = document.getElementsByClassName("css-9i6sf3").item(0);
     if (button && !button.hasListener) {
       button.addEventListener("click", createStats);
-      button.hasListener = true; // Custom property to mark listener addition
+      button.hasListener = true;
     }
   };
 
-  function observeDOMChanges() {
-    const observer = new MutationObserver(() => {
-      createStats();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-
   const delayedInitialization = () => {
     initializeScript();
-    observeDOMChanges();
   };
 
   setTimeout(delayedInitialization, 1000);
@@ -487,33 +493,27 @@ if (!window.hasRun) {
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    scrollbar-width: none;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.8);
   }
 
   .modal-content {
     background-color: whitesmoke;
     position: relative;
-    boxsizing: border-box;
-    z-index: 4;
-    padding: 5%;
-    top: 3%;
-    margin: auto;
+    padding: 0 2%;
+    margin: 2% auto;
     border: 1px solid #888;
-    width: 80%;
-    height: 100%;
+    width: 90%;
     border-radius: 15px;
-    overflow-y: auto;
   }
 
   .close {
-    color: #aaaaaa;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 28px;
+    color: whitesmoke;
+    position: fixed;
+    top: 0;
+    right: 0;
+    font-size: 2rem;
     font-weight: bold;
+    margin:1%;
   }
 
   .close:hover{
@@ -524,25 +524,27 @@ if (!window.hasRun) {
 
   .modal_cards_container {
     display: grid;
-    width: 100%;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    grid-auto-rows: 1fr;
     grid-gap: 3%;
+    align-items: space-around;
+    height: 100%;
+    overflow-y: auto;
+    padding: 2%;
   }
 
   .modal_card {
     position: relative;
     padding: 5%;
     border-radius: 15px;
-    background-color: #444;
-    box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
+    background-color: #eeeeee;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 8.5px 19px, rgba(0, 0, 0, 0.22) 0px 7.5px 6px;
     width: 100%;
     height: 100%;
   }
 
   .modal_card:hover {
     cursor: pointer;
-    transform: scale(1.05);
+    transform: scale(1.03);
   }
 
   .label-layout {
@@ -560,6 +562,13 @@ if (!window.hasRun) {
     background-color: transparent;
   }
 
+  .fixed-top-right {
+    position: fixed;
+    background-color: white;
+    top: 120px;
+    right:50px;
+    z-index: 2;
+  }
 `;
 
   const styleSheet = document.createElement("style");
