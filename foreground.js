@@ -19,8 +19,36 @@ if (!window.hasRun) {
       }, 1200);
     });
 
+  function transformRes(response) {
+    const parseJSON = (jsonString) => {
+      try {
+        return JSON.parse(jsonString);
+      } catch (error) {
+        return {};
+      }
+    };
+    const jsonData = {
+      data: {
+        id: response.data.id,
+        name: response.data.name,
+        image: response.data.image,
+        token_id: response.data.token_id,
+        tsx_price: parseFloat(response.data.price) / 1e18,
+        params: response.data.params,
+        params_json: parseJSON(response.data.params),
+        params_th: response.data.params_th,
+        params_th_json: parseJSON(response.data.params_th),
+        params_en: response.data.params_en,
+        params_en_json: parseJSON(response.data.params_en),
+      },
+    };
+
+    return jsonData.data;
+  }
+
   async function getData(itemId) {
-    const BASE_URL = "http://localhost:1323/api/v1/products/";
+    const BASE_URL =
+      "https://prod-mkp-api.astronize.com/mkp/item/nft/0x7d4622363695473062cc0068686d81964bb6e09f/";
     const url = `${BASE_URL}${itemId}`;
 
     try {
@@ -48,7 +76,8 @@ if (!window.hasRun) {
       }
 
       const jsonData = await response.json();
-      return jsonData.data;
+      const transformedData = transformRes(jsonData);
+      return transformedData;
     } catch (error) {
       console.error(`Error fetching data for itemId ${itemId}:`, error);
       return null;
@@ -353,7 +382,6 @@ if (!window.hasRun) {
     );
     for (let index = tmpNumIndex; index < parents.length; index++) {
       tmpNumIndex = index + 1;
-      console.log(index);
       const parent = parents[index];
       parent.style.position = "relative";
       parent.addEventListener("click", () => {
