@@ -4,12 +4,10 @@ if (!window.hasRun) {
   const findItemIds = () =>
     new Promise((resolve) => {
       setTimeout(async () => {
-        const itemElements = document.querySelectorAll(
-          ".AstText__TextWrapper-sc-1ydzoup-0"
-        );
+        const span = document.querySelectorAll("span");
         const itemIds = (
           await Promise.all(
-            Array.from(itemElements).map((itemElement) =>
+            Array.from(span).map((itemElement) =>
               itemElement.textContent
                 .split("#")
                 .slice(1)
@@ -17,6 +15,7 @@ if (!window.hasRun) {
             )
           )
         ).flat();
+        console.log(itemIds);
         resolve(itemIds);
       }, 1200);
     });
@@ -132,8 +131,10 @@ if (!window.hasRun) {
   function createStatsDiv() {
     const stat = document.createElement("div");
     stat.className = "stat";
-    stat.innerHTML =
-      "<span style='font-weight:800; text-decoration:underline;'>Stat</span>";
+    const span = document.createElement("span");
+    span.className = "stat-title";
+    span.innerHTML = "Stat";
+    stat.appendChild(span);
     return stat;
   }
 
@@ -566,6 +567,11 @@ if (!window.hasRun) {
     text-align: center;
     box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
     border-radius: 10px;
+  }
+  .stat-title{
+    font-weight: bold;
+    text-decoration: underline;
+    line-height: 2;
   }
   .display-stats {
     text-align: left;
