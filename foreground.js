@@ -315,9 +315,6 @@ if (!window.hasRun) {
       favModal.style.display === "none" ? "flex" : "none";
 
     if (favModal.style.display === "flex") {
-      document.documentElement.style.overflow = "hidden";
-      document.body.scroll = "no";
-
       const itemIds = JSON.parse(localStorage.getItem("favItems") || "[]");
       const myFavItems = await Promise.all(
         itemIds.map(async (id) => await getFavData(id))
@@ -387,9 +384,6 @@ if (!window.hasRun) {
           }
         }
       });
-    } else {
-      document.documentElement.style.overflow = "scroll";
-      document.body.scroll = "yes";
     }
   }
 
