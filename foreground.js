@@ -511,11 +511,16 @@ if (!window.hasRun) {
 
     window.addEventListener("scroll", handleScroll);
 
-    const button = document.getElementsByClassName("css-9i6sf3").item(0);
-    if (button && !button.hasListener) {
-      button.addEventListener("click", createStats);
-      button.hasListener = true;
-    }
+    const span = document.querySelectorAll("span");
+    span.forEach((el) => {
+      if (el.textContent.includes("โหลดเพิ่มเติม")) {
+        button = el.parentElement;
+        if (button && !button.hasListener) {
+          button.addEventListener("click", createStats);
+          button.hasListener = true;
+        }
+      }
+    });
   };
 
   // init
