@@ -108,7 +108,7 @@ if (!window.hasRun) {
       const jsonData = await response.json();
       if (jsonData.data.id === 0) {
         console.warn(`Item ID ${itemId} not found. Removing from favorites.`);
-        showAlert(`The item with ID #${itemId} has been sold out.`);
+        showAlert(`ไอเทม ไอดี #${itemId} ถูกผู้อื่นซื้อแล้ว.`);
         const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
         const updatedFavItems = favItems.filter((item) => item !== itemId);
         localStorage.setItem("favItems", JSON.stringify(updatedFavItems));
