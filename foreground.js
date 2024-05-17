@@ -138,24 +138,10 @@ if (!window.hasRun) {
   }
 
   function createDisplayDataStats(dataStats, stat) {
-    const specificStat = [
-      "ธาตุ",
-      "เลเวล",
-      "คุณภาพ",
-      "ประเภท",
-      "คำอธิบาย",
-      "อัพเกรด",
-      "ดาว",
-      "ตำแหน่งสวมใส่",
-      "คุณภาพ",
-      "โบนัสเซ็ท",
-    ];
     for (let i = 1; i < dataStats.length; i++) {
       const displayStats = document.createElement("p");
       displayStats.className = "display-stats";
-      if (specificStat.includes(dataStats[i].trait_type)) {
-        displayStats.innerHTML = `${dataStats[i].trait_type}: ${dataStats[i].value}`;
-      }
+      displayStats.innerHTML = `${dataStats[i].trait_type}: ${dataStats[i].value}`;
       stat.appendChild(displayStats);
     }
   }
@@ -487,6 +473,23 @@ if (!window.hasRun) {
       }
     }
   }
+  function ensurekButtonExists() {
+    const span = document.querySelectorAll("span");
+    span.forEach((el) => {
+      if (
+        el.textContent.includes("โหลดเพิ่มเติม") ||
+        el.textContent.includes("LOAD MORE")
+      ) {
+        button = el.parentElement;
+        if (button && !button.hasListener) {
+          button.addEventListener("click", createStats);
+          button.hasListener = true;
+        }
+        clearInterval(checkButton);
+        return;
+      }
+    });
+  }
 
   function handleScroll() {
     const favButton = document.querySelector(".favFilter-button");
@@ -510,21 +513,8 @@ if (!window.hasRun) {
     createStats();
 
     window.addEventListener("scroll", handleScroll);
-
-    const span = document.querySelectorAll("span");
-    span.forEach((el) => {
-      if (
-        el.textContent.includes("โหลดเพิ่มเติม") ||
-        el.textContent.includes("LOAD MORE")
-      ) {
-        button = el.parentElement;
-        if (button && !button.hasListener) {
-          button.addEventListener("click", createStats);
-          button.hasListener = true;
-        }
-      }
-    });
   };
+  var checkButton = setInterval(ensurekButtonExists, 1000);
 
   // init
   window.onload = initializeScript();
