@@ -227,6 +227,8 @@ if (!window.hasRun) {
       const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
       if (favItems.includes(id)) {
         favItems.splice(favItems.indexOf(id), 1);
+        const card = document.getElementById(`card-${id}`);
+        card.remove();
       } else {
         favItems.push(id);
       }
@@ -306,68 +308,65 @@ if (!window.hasRun) {
         itemIds.map(async (id) => await getFavData(id))
       );
       myFavItems.forEach((item) => {
-        if (item != null) {
-          // Check if the card for the item already exists
-          if (!document.getElementById(`card-${item.token_id}`)) {
-            const card = createModalCard();
-            card.id = `card-${item.token_id}`; // Set a unique ID for each card
+        if (!document.getElementById(`card-${item.token_id}`)) {
+          const card = createModalCard();
+          card.id = `card-${item.token_id}`; // Set a unique ID for each card
 
-            card.onclick = () => {
-              const url = `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${item.token_id}`;
-              window.open(url);
-            };
+          card.onclick = () => {
+            const url = `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${item.token_id}`;
+            window.open(url);
+          };
 
-            const stat = createStatsDiv();
-            const favButton = createFavButton(item.token_id);
-            const mainAttributeName = document.createElement("span");
-            mainAttributeName.style.cssText = `text-decoration: underline; color: red; font-weight: 800; font-style: italic;`;
+          const stat = createStatsDiv();
+          const favButton = createFavButton(item.token_id);
+          const mainAttributeName = document.createElement("span");
+          mainAttributeName.style.cssText = `text-decoration: underline; color: red; font-weight: 800; font-style: italic;`;
 
-            const subAttributeName = document.createElement("span");
-            subAttributeName.style.cssText = `text-decoration: underline; color: skyblue; font-weight: 600; font-style: italic;`;
+          const subAttributeName = document.createElement("span");
+          subAttributeName.style.cssText = `text-decoration: underline; color: skyblue; font-weight: 600; font-style: italic;`;
 
-            const hr = document.createElement("hr");
-            hr.style.cssText = `width: 100%;`;
+          const hr = document.createElement("hr");
+          hr.style.cssText = `width: 100%;`;
 
-            const cardImageContainer = createCardImageContainer(item.image);
-            const cardLabel = createCardLabel(
-              `${item.name} #${item.token_id}`,
-              item.tsx_price
+          const cardImageContainer = createCardImageContainer(item.image);
+          const cardLabel = createCardLabel(
+            `${item.name} #${item.token_id}`,
+            item.tsx_price
+          );
+          card.appendChild(cardImageContainer);
+          card.appendChild(cardLabel);
+
+          createDisplayDataStats(item.params_th_json.attributes, stat);
+          const extraStat = createExtraStat(
+            item.params_th_json.extra.attributes,
+            stat
+          );
+
+          if (
+            item.params_th_json.main_attributes.attributes &&
+            item.params_th_json.sub_attributes.attributes
+          ) {
+            mainAttributeName.innerHTML =
+              item.params_th_json.main_attributes.name_attributes;
+            subAttributeName.innerHTML =
+              item.params_th_json.sub_attributes.name_attributes;
+            extraStat.appendChild(mainAttributeName);
+            createAttributes(
+              extraStat,
+              item.params_th_json.main_attributes.attributes
             );
-            card.appendChild(cardImageContainer);
-            card.appendChild(cardLabel);
-
-            createDisplayDataStats(item.params_th_json.attributes, stat);
-            const extraStat = createExtraStat(
-              item.params_th_json.extra.attributes,
-              stat
-            );
-
-            if (
-              item.params_th_json.main_attributes.attributes &&
+            extraStat.appendChild(hr);
+            extraStat.appendChild(subAttributeName);
+            createAttributes(
+              extraStat,
               item.params_th_json.sub_attributes.attributes
-            ) {
-              mainAttributeName.innerHTML =
-                item.params_th_json.main_attributes.name_attributes;
-              subAttributeName.innerHTML =
-                item.params_th_json.sub_attributes.name_attributes;
-              extraStat.appendChild(mainAttributeName);
-              createAttributes(
-                extraStat,
-                item.params_th_json.main_attributes.attributes
-              );
-              extraStat.appendChild(hr);
-              extraStat.appendChild(subAttributeName);
-              createAttributes(
-                extraStat,
-                item.params_th_json.sub_attributes.attributes
-              );
-              stat.appendChild(extraStat);
-            }
-
-            card.appendChild(favButton);
-            card.appendChild(stat);
-            modalCardsContainer.appendChild(card);
+            );
+            stat.appendChild(extraStat);
           }
+
+          card.appendChild(favButton);
+          card.appendChild(stat);
+          modalCardsContainer.appendChild(card);
         }
       });
     }
