@@ -59,12 +59,10 @@ if (!window.hasRun) {
     }, 5000);
   }
 
-  let favTimes = -1;
   let fetchedIds = new Set();
   async function getData(itemId) {
     //Handle repeated API calls
     if (fetchedIds.has(itemId)) {
-      console.log("skip item", itemId);
       return null;
     }
 
@@ -100,31 +98,26 @@ if (!window.hasRun) {
 
     try {
       const response = await fetch(url);
-      favTimes++;
-      console.log("API Fav", favTimes);
-
       if (!response.ok) {
-        if (response.status === 404) {
-          console.warn(`Item ID ${itemId} not found. Removing from favorites.`);
-          showAlert(`The item with ID ${itemId} has been sold out.`);
-          const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
-          const updatedFavItems = favItems.filter((item) => item !== itemId);
-          localStorage.setItem("favItems", JSON.stringify(updatedFavItems));
-
-          // Fetch data again for the remaining item ids
-          const newItems = await Promise.all(
-            updatedFavItems.map((id) => getData(id))
-          );
-          return newItems.filter((data) => data !== null);
-        } else {
-          console.error(
-            `Failed to fetch fav data for itemId ${itemId}: ${response.statusText} (${response.status})`
-          );
-          return null;
-        }
+        console.error(
+          `Failed to fetch fav data for itemId ${itemId}: ${response.statusText} (${response.status})`
+        );
+        return null;
       }
-
       const jsonData = await response.json();
+      if (jsonData.data.id === 0) {
+        console.warn(`Item ID ${itemId} not found. Removing from favorites.`);
+        showAlert(`The item with ID #${itemId} has been sold out.`);
+        const favItems = JSON.parse(localStorage.getItem("favItems") || "[]");
+        const updatedFavItems = favItems.filter((item) => item !== itemId);
+        localStorage.setItem("favItems", JSON.stringify(updatedFavItems));
+
+        // Fetch data again for the remaining item ids
+        const newItems = await Promise.all(
+          updatedFavItems.map((id) => getData(id))
+        );
+        return null;
+      }
       const transformedData = transformRes(jsonData);
 
       return transformedData;
@@ -322,68 +315,69 @@ if (!window.hasRun) {
       const myFavItems = await Promise.all(
         itemIds.map(async (id) => await getFavData(id))
       );
-
       myFavItems.forEach((item) => {
-        // Check if the card for the item already exists
-        if (!document.getElementById(`card-${item.token_id}`)) {
-          const card = createModalCard();
-          card.id = `card-${item.token_id}`; // Set a unique ID for each card
+        if (item != null) {
+          // Check if the card for the item already exists
+          if (!document.getElementById(`card-${item.token_id}`)) {
+            const card = createModalCard();
+            card.id = `card-${item.token_id}`; // Set a unique ID for each card
 
-          card.onclick = () => {
-            const url = `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${item.token_id}`;
-            window.open(url);
-          };
+            card.onclick = () => {
+              const url = `https://astronize.com/th/nft/0x7D4622363695473062Cc0068686d81964bb6e09f/${item.token_id}`;
+              window.open(url);
+            };
 
-          const stat = createStatsDiv();
-          const favButton = createFavButton(item.token_id);
-          const mainAttributeName = document.createElement("span");
-          mainAttributeName.style.cssText = `text-decoration: underline; color: red; font-weight: 800; font-style: italic;`;
+            const stat = createStatsDiv();
+            const favButton = createFavButton(item.token_id);
+            const mainAttributeName = document.createElement("span");
+            mainAttributeName.style.cssText = `text-decoration: underline; color: red; font-weight: 800; font-style: italic;`;
 
-          const subAttributeName = document.createElement("span");
-          subAttributeName.style.cssText = `text-decoration: underline; color: skyblue; font-weight: 600; font-style: italic;`;
+            const subAttributeName = document.createElement("span");
+            subAttributeName.style.cssText = `text-decoration: underline; color: skyblue; font-weight: 600; font-style: italic;`;
 
-          const hr = document.createElement("hr");
-          hr.style.cssText = `width: 100%;`;
+            const hr = document.createElement("hr");
+            hr.style.cssText = `width: 100%;`;
 
-          const cardImageContainer = createCardImageContainer(item.image);
-          const cardLabel = createCardLabel(
-            `${item.name} #${item.token_id}`,
-            item.tsx_price
-          );
-          card.appendChild(cardImageContainer);
-          card.appendChild(cardLabel);
-
-          createDisplayDataStats(item.params_th_json.attributes, stat);
-          const extraStat = createExtraStat(
-            item.params_th_json.extra.attributes,
-            stat
-          );
-
-          if (
-            item.params_th_json.main_attributes.attributes &&
-            item.params_th_json.sub_attributes.attributes
-          ) {
-            mainAttributeName.innerHTML =
-              item.params_th_json.main_attributes.name_attributes;
-            subAttributeName.innerHTML =
-              item.params_th_json.sub_attributes.name_attributes;
-            extraStat.appendChild(mainAttributeName);
-            createAttributes(
-              extraStat,
-              item.params_th_json.main_attributes.attributes
+            const cardImageContainer = createCardImageContainer(item.image);
+            const cardLabel = createCardLabel(
+              `${item.name} #${item.token_id}`,
+              item.tsx_price
             );
-            extraStat.appendChild(hr);
-            extraStat.appendChild(subAttributeName);
-            createAttributes(
-              extraStat,
+            card.appendChild(cardImageContainer);
+            card.appendChild(cardLabel);
+
+            createDisplayDataStats(item.params_th_json.attributes, stat);
+            const extraStat = createExtraStat(
+              item.params_th_json.extra.attributes,
+              stat
+            );
+
+            if (
+              item.params_th_json.main_attributes.attributes &&
               item.params_th_json.sub_attributes.attributes
-            );
-            stat.appendChild(extraStat);
-          }
+            ) {
+              mainAttributeName.innerHTML =
+                item.params_th_json.main_attributes.name_attributes;
+              subAttributeName.innerHTML =
+                item.params_th_json.sub_attributes.name_attributes;
+              extraStat.appendChild(mainAttributeName);
+              createAttributes(
+                extraStat,
+                item.params_th_json.main_attributes.attributes
+              );
+              extraStat.appendChild(hr);
+              extraStat.appendChild(subAttributeName);
+              createAttributes(
+                extraStat,
+                item.params_th_json.sub_attributes.attributes
+              );
+              stat.appendChild(extraStat);
+            }
 
-          card.appendChild(favButton);
-          card.appendChild(stat);
-          modalCardsContainer.appendChild(card);
+            card.appendChild(favButton);
+            card.appendChild(stat);
+            modalCardsContainer.appendChild(card);
+          }
         }
       });
     } else {
@@ -528,7 +522,6 @@ if (!window.hasRun) {
       button.addEventListener("click", createStats);
       button.hasListener = true;
     }
-    console.log(fetchedIds);
   };
 
   const checkUrlChange = () => {
@@ -685,18 +678,24 @@ if (!window.hasRun) {
   position: fixed;
   top: 20px;
   left: 20px;
-  z-index: 1000;
+  border-radius: 15px;
+  z-index: 10;
 }
 
 .alert {
+  position: relative;
+  left: -300px; 
   margin-top: 10px;
-  width: 250px;
-  padding: 20px;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  animation: slideIn 0.5s forwards;
+  width: auto;
+  padding: 15px;
+  color: #FFFFFF;
+  font-weight: bold;
+  border-radius: 10px;
+  background-color: rgba(255, 0, 0, 1);
+  box-shadow: 5px 4px 10px rgba(255, 0, 0, 0.4);
+  -webkit-animation: slideIn 0.8s forwards;
+  -moz-animation: slideIn 0.8s forwards;
+  animation: slideIn 0.8s forwards;
 }
 
 @keyframes slideIn {
