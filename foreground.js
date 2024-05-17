@@ -4,7 +4,9 @@ if (!window.hasRun) {
   const findItemIds = () =>
     new Promise((resolve) => {
       setTimeout(async () => {
-        const itemElements = document.querySelectorAll(".gHqUzg");
+        const itemElements = document.querySelectorAll(
+          ".AstText__TextWrapper-sc-1ydzoup-0"
+        );
         const itemIds = (
           await Promise.all(
             Array.from(itemElements).map((itemElement) =>
@@ -194,8 +196,7 @@ if (!window.hasRun) {
     const parent = document.getElementsByClassName("flex flex-row gap-x-4")[1];
     const myFav = document.createElement("button");
     if (parent.childElementCount == 2) {
-      myFav.className =
-        "ant-btn css-1t70z6z ant-btn-default AstButton__ButtonWrapper-sc-6rri8f-0 llGVmB favFilter-button ";
+      myFav.className = "favFilter-button";
       myFav.innerHTML = "<span>รายการโปรด</span>";
       parent.appendChild(myFav);
     }
@@ -540,6 +541,23 @@ if (!window.hasRun) {
   window.onload = initializeScript();
 
   const styles = `
+  .favFilter-button{
+    cursor: pointer;
+    touch-action: manipulation;
+    color: red;
+    font-weight: bold;
+    height: 40px;
+    background-color: white;
+    letter-spacing: 0.1em;
+    border: 1px solid skyblue;
+    border-radius: 20px;
+    padding:0 23px;
+  }
+
+  .favFilter-button:hover {
+    color: skyblue;
+  }
+
   .stat {
     background-color: blue;
     color: white;
@@ -668,10 +686,9 @@ if (!window.hasRun) {
 
   .fixed-top-right {
     position: fixed;
-    background-color: white;
     top: 120px;
     right:50px;
-    z-index: 2;
+    z-index: 1;
   }
 
 #alertContainer {
