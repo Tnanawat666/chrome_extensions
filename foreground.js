@@ -15,7 +15,6 @@ if (!window.hasRun) {
             )
           )
         ).flat();
-        console.log(itemIds);
         resolve(itemIds);
       }, 1200);
     });
@@ -193,14 +192,20 @@ if (!window.hasRun) {
     }
   }
 
+  let myFav = null;
+
   function createFavFilterButton() {
-    const parent = document.getElementsByClassName("flex flex-row gap-x-4")[1];
-    const myFav = document.createElement("button");
-    if (parent.childElementCount == 2) {
+    if (!myFav) {
+      const parent = document.getElementsByClassName(
+        "flex flex-row gap-x-4"
+      )[1];
+      myFav = document.createElement("button");
+
       myFav.className = "favFilter-button";
       myFav.innerHTML = "<span>รายการโปรด</span>";
       parent.appendChild(myFav);
     }
+
     return myFav;
   }
 
@@ -439,56 +444,51 @@ if (!window.hasRun) {
         parent.hasListener = true;
       }
 
-      if (parent.childElementCount === 2) {
-        const stat = createStatsDiv();
+      const stat = createStatsDiv();
 
-        if (allData[index]) {
-          const favButton = createFavButton(allData[index].token_id);
-          const dataStats = allData[index].params_th_json.attributes;
-          createDisplayDataStats(dataStats, stat);
+      if (allData[index]) {
+        const favButton = createFavButton(allData[index].token_id);
+        const dataStats = allData[index].params_th_json.attributes;
+        createDisplayDataStats(dataStats, stat);
 
-          const extraAttributes =
-            allData[index].params_th_json.extra.attributes;
-          const extraStat = createExtraStat(extraAttributes, stat);
+        const extraAttributes = allData[index].params_th_json.extra.attributes;
+        const extraStat = createExtraStat(extraAttributes, stat);
 
-          const mainAttributeName = document.createElement("span");
-          mainAttributeName.style.cssText = `text-decoration: underline;
-                color: red;
-                font-weight: 800;
-                font-style: italic;`;
+        const mainAttributeName = document.createElement("span");
+        mainAttributeName.style.cssText = `text-decoration: underline;
+                        color: red;
+                        font-weight: 800;
+                        font-style: italic;`;
 
-          const subAttributeName = document.createElement("span");
-          subAttributeName.style.cssText = `text-decoration: underline;
-                color: skyblue;
-                font-weight: 600;
-                font-style: italic;`;
+        const subAttributeName = document.createElement("span");
+        subAttributeName.style.cssText = `text-decoration: underline;
+                        color: skyblue;
+                        font-weight: 600;
+                        font-style: italic;`;
+        const main_attributes =
+          allData[index].params_th_json.main_attributes.attributes;
+        const main_name =
+          allData[index].params_th_json.main_attributes.name_attributes;
+        const sub_attributes =
+          allData[index].params_th_json.sub_attributes.attributes;
+        const sub_name =
+          allData[index].params_th_json.sub_attributes.name_attributes;
 
-          const main_attributes =
-            allData[index].params_th_json.main_attributes.attributes;
-          const main_name =
-            allData[index].params_th_json.main_attributes.name_attributes;
-          const sub_attributes =
-            allData[index].params_th_json.sub_attributes.attributes;
-          const sub_name =
-            allData[index].params_th_json.sub_attributes.name_attributes;
+        if (main_attributes && sub_attributes) {
+          mainAttributeName.innerHTML = main_name;
+          subAttributeName.innerHTML = sub_name;
+          const hr = document.createElement("hr");
+          hr.style.cssText = `width: 100%;`;
 
-          if (main_attributes && sub_attributes) {
-            mainAttributeName.innerHTML = main_name;
-            subAttributeName.innerHTML = sub_name;
-            const hr = document.createElement("hr");
-            hr.style.cssText = `width: 100%;`;
-
-            extraStat.appendChild(mainAttributeName);
-            createAttributes(extraStat, main_attributes);
-            extraStat.appendChild(hr);
-            extraStat.appendChild(subAttributeName);
-            createAttributes(extraStat, sub_attributes);
-            stat.appendChild(extraStat);
-          }
-
-          parent.appendChild(favButton);
+          extraStat.appendChild(mainAttributeName);
+          createAttributes(extraStat, main_attributes);
+          extraStat.appendChild(hr);
+          extraStat.appendChild(subAttributeName);
+          createAttributes(extraStat, sub_attributes);
+          stat.appendChild(extraStat);
         }
 
+        parent.appendChild(favButton);
         parent.appendChild(stat);
       }
     }
@@ -505,8 +505,6 @@ if (!window.hasRun) {
 
   // init script and event listeners for url change
   const initializeScript = () => {
-    const currentPage = location.href;
-    localStorage.setItem("URL", currentPage);
     document.body.append(createFavModal());
 
     const messageAlert = document.createElement("div");
@@ -526,19 +524,7 @@ if (!window.hasRun) {
     }
   };
 
-  const checkUrlChange = () => {
-    const currentPage = location.href;
-    const previousPage = localStorage.getItem("URL");
-    if (currentPage !== previousPage) {
-      localStorage.setItem("URL", currentPage);
-      //refresh the page or init script;
-      window.location.reload();
-    }
-  };
-
-  const observer = new MutationObserver(checkUrlChange);
-  observer.observe(document, { subtree: true, childList: true });
-
+  // init
   window.onload = initializeScript();
 
   const styles = `
