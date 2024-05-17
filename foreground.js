@@ -513,7 +513,10 @@ if (!window.hasRun) {
 
     const span = document.querySelectorAll("span");
     span.forEach((el) => {
-      if (el.textContent.includes("โหลดเพิ่มเติม")) {
+      if (
+        el.textContent.includes("โหลดเพิ่มเติม") ||
+        el.textContent.includes("LOAD MORE")
+      ) {
         button = el.parentElement;
         if (button && !button.hasListener) {
           button.addEventListener("click", createStats);
