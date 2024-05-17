@@ -395,13 +395,13 @@ if (!window.hasRun) {
     const divLayout = document.createElement("div");
     divLayout.className = "flex flex-row justify-between label-layout";
     const divLabel = document.createElement("div");
-    divLabel.className = "AstText__TextWrapper-sc-1ydzoup-0 gHqUzg";
+    divLabel.className = "label";
     divLabel.innerHTML = `<span type="normal_700_14px_20px">${label}</span>`;
     const divPriceContainer = document.createElement("div");
     divPriceContainer.className =
       "mt-[1px] flex flex-[0_0_auto] flex-row items-center justify-center gap-1";
     const divPrice = document.createElement("div");
-    divPrice.innerHTML = `<span type="normal_700_12px_16px" color="#02D767" class="AstText__TextWrapper-sc-1ydzoup-0 bkGuAK">${tsx_price}TSX</span>`;
+    divPrice.innerHTML = `<span type="normal_800_16px_20px" color="#02D767" class="label-price">${tsx_price}TSX</span>`;
     divLayout.appendChild(divLabel);
     divLayout.appendChild(divPrice);
     div.appendChild(divLayout);
@@ -625,7 +625,7 @@ if (!window.hasRun) {
   }
 
   .modal-content {
-    background-color: whitesmoke;
+    background-color: black;
     position: relative;
     padding: 0 2%;
     margin: 2% auto;
@@ -664,7 +664,7 @@ if (!window.hasRun) {
     position: relative;
     padding: 5%;
     border-radius: 15px;
-    background-color: #eeeeee;
+    background-color: #555;
     box-shadow: rgba(0, 0, 0, 0.3) 0px 8.5px 19px, rgba(0, 0, 0, 0.22) 0px 7.5px 6px;
     width: 100%;
     height: 100%;
@@ -675,10 +675,24 @@ if (!window.hasRun) {
     transform: scale(1.03);
   }
 
+  .label{
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+
   .label-layout {
-    background-color: white;
+    background-color: transparent;
     padding: 2%;
     border-radius: 5px;
+  }
+
+  .label-price {
+    color: rgb(2, 215, 103);
+    font-style: normal;
+    font-weight: bold;
+    font-size: 1.1rem;
+    line-height: 18px;
   }
 
   .cardImg-container {
