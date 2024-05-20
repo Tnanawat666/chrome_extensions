@@ -412,6 +412,7 @@ if (!window.hasRun) {
 
     for (let index = 0; index < parents.length; index++) {
       const parent = parents[index];
+      parent.id = "statsContainer";
       if (!parent.hasListener) {
         parent.style.position = "relative";
         parent.addEventListener("click", (event) => {
@@ -499,8 +500,12 @@ if (!window.hasRun) {
     }
   }
 
-  // init script and event listeners for url change
+  // init script
   const initializeScript = () => {
+    // Ensure initialization only happens once
+    if (document.body.dataset.initialized) return;
+    document.body.dataset.initialized = "true";
+
     document.body.append(createFavModal());
 
     const messageAlert = document.createElement("div");
@@ -512,11 +517,19 @@ if (!window.hasRun) {
     createStats();
 
     window.addEventListener("scroll", handleScroll);
+
+    checkButton = setInterval(ensurekButtonExists, 1000);
   };
-  var checkButton = setInterval(ensurekButtonExists, 1000);
 
   // init
-  window.onload = initializeScript();
+  if (
+    document.readyState === "complete" ||
+    document.readyState === "interactive"
+  ) {
+    initializeScript();
+  } else {
+    window.addEventListener("load", initializeScript);
+  }
 
   const styles = `
   .favFilter-button{
